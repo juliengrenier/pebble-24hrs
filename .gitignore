@@ -5,6 +5,11 @@
 *.lib
 *.a
 
+# Ignore waf build tool generated files
+.waf*
+build
+.lock-waf*
+
 # Shared objects (inc. Windows DLLs)
 *.dll
 *.so
@@ -15,3 +20,14 @@
 *.exe
 *.out
 *.app
+
+# Ignore linked files/directories
+waf
+wscript
+tools
+include
+lib
+pebble_app.ld
+
+# Ignore other generated files
+serial_dump.txt
