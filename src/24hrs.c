@@ -2,6 +2,8 @@
 #include "pebble_app.h"
 #include "pebble_fonts.h"
 
+#include "utils.h"
+
 
 #define MY_UUID { 0xE5, 0xAB, 0x90, 0x03, 0x23, 0x6B, 0x44, 0x54, 0x9F, 0x43, 0xBD, 0x97, 0x6E, 0xFA, 0x7A, 0x83 }
 PBL_APP_INFO(MY_UUID,
@@ -18,46 +20,6 @@ Layer minute_layer;
 
 int32_t current_hour = -1;
 int32_t current_minute = -1;
-static const int minute_indexes[] = {
-        3,
-        2,
-        1,
-        0,
-        11,
-        10,
-        9,
-        8,
-        7,
-        6,
-        5,
-        4
-};
-static const int hour_indexes[] = {
-        6, 
-        5, 
-        4, 
-        3, 
-        2, 
-        1, 
-        0,
-        23, 
-        22, 
-        21, 
-        20, 
-        19, 
-        18,
-        17,
-        16,
-        15,
-        14,
-        13,
-        12,
-        11,
-        10,
-        9,
-        8,
-        7
-};
 
 
 #define CIRCLE_RADIUS 4
@@ -69,13 +31,6 @@ static const int hour_indexes[] = {
 #define MINUTE_CLOCK_FACE_RADIUS 68 //144/2 - (CIRCLE_RADIUS + PADDING)
 
 
-int32_t transpose_minute_index(int32_t index){
-  return ((-1 * index) + 15) % NUMBER_OF_MINUTES;
-}
-
-int32_t transpose_hour_index(int32_t index){
-  return ((-1 * index) + 30) % NUMBER_OF_HOURS;
-}
 
 
 void draw_cell(GContext* ctx, GPoint center, bool filled, int radius) {
@@ -93,13 +48,11 @@ void draw_minutes(GContext* ctx){
 
   GPoint window_center = grect_center_point(&window.layer.frame);
   for(int32_t i=0; i < NUMBER_OF_MINUTES; i++){
-    int32_t hex_angle = (int32_t) transpose_minute_index(i) * 1092; //0xffff / 60 
-    int32_t x = MINUTE_CLOCK_FACE_RADIUS *  cos_lookup(hex_angle) / TRIG_MAX_RATIO;   
-    int32_t y = MINUTE_CLOCK_FACE_RADIUS *  sin_lookup(hex_angle) / TRIG_MAX_RATIO;   
-    x = window_center.x + x;
-    y = window_center.y - y;
-    GPoint minute_center = GPoint(x, y);
-    draw_cell(ctx, minute_center, i == t.tm_min,(i % 5)==0?CIRCLE_RADIUS-1:CIRCLE_RADIUS-2);
+    if (i == t.tm_min || (i % 5) == 0){
+      int32_t hex_angle = get_nth_angle(i, NUMBER_OF_MINUTES, true); 
+      GPoint minute_center = polar_to_cartesian(MINUTE_CLOCK_FACE_RADIUS, hex_angle, window_center); 
+      draw_cell(ctx, minute_center, i == t.tm_min,(i % 5)==0?CIRCLE_RADIUS-1:CIRCLE_RADIUS-2);
+    }
   }
   //current_minute = t.tm_min / 5;
 }
@@ -110,12 +63,9 @@ void draw_hours(GContext* ctx) {
 
   current_hour = t.tm_hour; 
   for(int32_t i=0; i < NUMBER_OF_HOURS; i++){
-    int32_t hex_angle = (int32_t) transpose_hour_index(i) * 2730; //0xffff / 24 
-    int32_t x = HOUR_CLOCK_FACE_RADIUS *  cos_lookup(hex_angle) / TRIG_MAX_RATIO;   
-    int32_t y = HOUR_CLOCK_FACE_RADIUS *  sin_lookup(hex_angle) / TRIG_MAX_RATIO;   
-    x = window_center.x + x;
-    y = window_center.y - y;
-    GPoint hour_center = GPoint(x, y);
+    int32_t hex_angle = get_nth_angle(i, NUMBER_OF_HOURS, true); 
+
+    GPoint hour_center = polar_to_cartesian(HOUR_CLOCK_FACE_RADIUS, hex_angle, window_center); 
     draw_cell(ctx, hour_center, current_hour == i, CIRCLE_RADIUS);
   }
 
